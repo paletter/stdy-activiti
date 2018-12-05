@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:activiti="http://activiti.org/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC" xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI" typeLanguage="http://www.w3.org/2001/XMLSchema" expressionLanguage="http://www.w3.org/1999/XPath" targetNamespace="http://activiti.org/bpmn20" id="review-definitions">
+
+  <process id="activitiReviewPooled" name="Pooled Review And Approve Activiti Process">
+  
+    <startEvent id="startevent1" name="Start"></startEvent>
+    <sequenceFlow id="flow1" sourceRef="startevent1" targetRef="usertask1"></sequenceFlow>
+    
+    <userTask id="usertask1" name="Submit Contract" activiti:candidateGroups="management">
+    </userTask>
+    <sequenceFlow id="flow2" sourceRef="usertask1" targetRef="auditContract"></sequenceFlow>
+    
+    <userTask id="auditContract" name="Audit Contract" activiti:candidateGroups="management">
+    	<extensionElements>
+        	<activiti:formProperty id="auditState" name="Audit state" type="enum" required="true">
+	          <activiti:value id="1" name="Pass" />
+	          <activiti:value id="0" name="Reject" />
+	        </activiti:formProperty>
+      	</extensionElements>
+    </userTask>
+    <sequenceFlow id="flow9" sourceRef="auditContract" targetRef="exclusivegateway1"></sequenceFlow>
+    
+    <exclusiveGateway id="exclusivegateway1" name="Audit pass?"></exclusiveGateway>
+    
+    <sequenceFlow id="flow3" sourceRef="exclusivegateway1" targetRef="usertask2">
+    	<conditionExpression xsi:type="tFormalExpression">${auditState == '1'}</conditionExpression>
+    </sequenceFlow>
+    <serviceTask id="usertask2" name="Integrate SDK" activiti:class="com.paletter.stdy.activiti.delegate.AuditContractPassDelegate"></serviceTask>
+    <sequenceFlow id="flow6" sourceRef="usertask2" targetRef="endevent1"></sequenceFlow>
+    
+    <sequenceFlow id="flow4" sourceRef="exclusivegateway1" targetRef="usertask3">
+    	<conditionExpression xsi:type="tFormalExpression">${auditState == '0'}</conditionExpression>
+    </sequenceFlow>
+    <scriptTask id="usertask3" name="Fallback" scriptFormat="javascript">
+    	<script><![CDATA[var dateAsString = new Date().toString();execution.setVariable("autoWelcomeTime", dateAsString);]]></script>
+    </scriptTask>
+    <sequenceFlow id="flow5" sourceRef="usertask3" targetRef="endevent1"></sequenceFlow>
+    
+    <endEvent id="endevent1" name="End"></endEvent>
+  </process>
+</definitions>
